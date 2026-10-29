@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#151a22">
+<title>쿠폰 판정소</title>
+<meta name="description" content="같은 60 대 40인데 결론이 정반대? — 범주형 데이터의 빈도, 교차표와 백분율, 기대 빈도와 카이제곱 검정, 표본 크기, 피셔 정확 검정, 원 핫 인코딩을 손으로 체험하는 앱">
+<style>
+:root{--bg:#151a22;--card:#1c232e;--card2:#25303d;--fg:#eff3f8;--mut:#a3b0c2;--line:#33425a;
+--a:#7cc4ff;--b:#ff9b5c;--ok:#6fdc9a;--bad:#ff7d7d;--gold:#ffd166;--pur:#b79cff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;line-height:1.55}
+[hidden]{display:none!important}
+.wrap{max-width:560px;margin:0 auto;padding:12px 14px 40px}
+h1{font-size:1.2rem;margin:6px 0}
+h1 small{display:block;font-size:.76rem;color:var(--mut);font-weight:400}
+.tabs{display:flex;gap:5px;margin:10px 0}
+.tabs button{flex:1;padding:9px 2px;border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:10px;font-size:.84rem;font-weight:600}
+.tabs button.on{background:#24406e;color:#fff;border-color:var(--a)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+h2{font-size:1rem;margin:2px 0 8px}
+.note{font-size:.86rem;color:var(--mut);margin:8px 0 0}
+.note b{color:var(--fg)}
+.btn{padding:11px 14px;border-radius:12px;border:0;background:linear-gradient(135deg,#2f6fd0,#7cc4ff);color:#fff;font-weight:800;font-size:.95rem;flex:1}
+.btn.sec{background:var(--card2);border:1px solid var(--line);color:var(--fg);font-weight:700}
+.btn.sm{flex:none;padding:7px 11px;font-size:.82rem}
+.btn:disabled{opacity:.4}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row+.row{margin-top:8px}
+.pill{padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--fg);font-size:.84rem}
+.pill.on{border-color:var(--gold);background:#4a3e1a;color:#fff}
+.lbl{font-size:.8rem;color:var(--mut)}
+canvas{display:block;width:100%;border-radius:12px;background:#10141b;margin-top:8px}
+.say{background:#16304c;border-left:3px solid var(--a);border-radius:8px;padding:9px 11px;font-size:.92rem;margin-top:10px}
+.say b{color:#fff}
+.say.q{border-left-color:var(--b);background:#2e2118}
+.res{margin-top:10px;font-size:.92rem;border-radius:10px;padding:10px 12px}
+.res.g{background:#16352a;border:1px solid #2f7a52}
+.res.r{background:#3a1d1d;border:1px solid #8a3a3a}
+.res.y{background:#3a3218;border:1px solid #8a7a3a}
+.code{background:#0f131a;border:1px solid #26324a;border-radius:10px;padding:9px 11px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem;line-height:1.65;white-space:pre;overflow-x:auto;margin-top:8px}
+.code .k{color:#ff9bd2}.code .s{color:#a5e38a}.code .c{color:#6b7a90}.code .n{color:#ffd166}.code .f{color:#7cc4ff}
+.out{background:#0b0e13;border-radius:10px;padding:8px 11px;margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem;white-space:pre-wrap;word-break:break-all}
+.out .p{color:#6b7a90}.out .o{color:#6fdc9a}.out .w{color:#ffd166}.out .e{color:#ff7d7d}
+.opts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.opts button{text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--fg);font-size:.92rem}
+.opts button.right{border-color:#6fdc9a;background:#16352a}
+.opts button.wrong{border-color:#ff7d7d;background:#3a1d1d}
+.ct{width:100%;border-collapse:separate;border-spacing:4px;margin-top:8px;font-variant-numeric:tabular-nums}
+.ct th{font-size:.78rem;color:var(--mut);font-weight:600;padding:2px}
+.ct td{background:var(--card2);border-radius:8px;text-align:center;padding:8px 4px;font-size:.98rem;font-weight:700;transition:background .3s}
+.ct td small{display:block;font-size:.7rem;font-weight:400;color:var(--mut)}
+.ct td.m{background:#1a2230;color:var(--mut);font-weight:600}
+.ct td.hl{background:#4a3e1a}
+.ct td.div{outline:2px solid var(--a)}
+.ct th.rh{text-align:left}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.stats div{background:var(--card2);border-radius:10px;padding:7px 6px;text-align:center;font-size:.74rem;color:var(--mut)}
+.stats div b{display:block;font-size:1.02rem;color:var(--fg);font-variant-numeric:tabular-nums}
+.sort{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sort span{padding:7px 11px;border-radius:999px;background:#24406e;font-size:.86rem;border:1px solid transparent}
+.sort span.cur{border-color:var(--gold);background:#4a3e1a}
+.sort span.done{opacity:.35}
+.bins{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.bins button{padding:10px 4px;border-radius:10px;border:1px dashed #55667f;background:var(--card2);color:var(--fg);font-size:.86rem;font-weight:700}
+.bins div{font-size:.76rem;color:var(--mut);min-height:20px;text-align:center}
+.vc{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.vc .d{display:grid;grid-template-columns:78px 1fr 34px;gap:8px;align-items:center;font-size:.84rem}
+.vc .d span{font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre}
+.vc .bar{height:16px;border-radius:8px;background:linear-gradient(90deg,#2f6fd0,#7cc4ff);transition:width .5s}
+.vc .d.bad .bar{background:linear-gradient(90deg,#a33,#ff7d7d)}
+.vc .d b{text-align:right;font-variant-numeric:tabular-nums}
+.oh{width:100%;border-collapse:collapse;margin-top:8px;font-size:.78rem;font-variant-numeric:tabular-nums}
+.oh td,.oh th{border:1px solid var(--line);padding:4px 3px;text-align:center}
+.oh th{background:var(--card2);font-weight:600}
+.oh th.dr{text-decoration:line-through;opacity:.45}
+.oh td.one{background:#1f5a3c;color:#fff;font-weight:700}
+.oh td.dr{opacity:.3}
+.ohw{overflow-x:auto}
+.sw{display:flex;align-items:center;gap:8px;font-size:.86rem;margin-top:8px}
+.sw input{width:18px;height:18px}
+input[type=range]{width:100%}
+input[type=text]{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#10141b;color:var(--fg);font-size:.92rem}
+.sum3{margin-top:12px;background:linear-gradient(135deg,#1d3358,#3a2a5a);border-radius:14px;padding:12px 14px}
+.sum3 ol{margin:4px 0;padding-left:20px;font-size:.92rem}
+.mine{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.mine div{display:flex;justify-content:space-between;gap:8px;background:var(--card2);border-radius:10px;padding:8px 10px;font-size:.88rem}
+.mine button{border:0;background:none;color:var(--mut);font-size:.9rem}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000c;color:#fff;padding:10px 16px;border-radius:999px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+footer{text-align:center;color:var(--mut);font-size:.78rem;margin-top:18px}
+footer a{color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🎟️ 쿠폰 판정소<small>같은 60 대 40인데 결론이 정반대? — 범주형 데이터와 카이제곱</small></h1>
+<div class="tabs">
+  <button class="on" data-tab="t1">① 빈도</button>
+  <button data-tab="t2">② 교차표</button>
+  <button data-tab="t3">③ 카이제곱</button>
+  <button data-tab="t4">④ 원 핫</button>
+</div>
+
+<!-- ① -->
+<section id="tab-t1">
+  <div class="card">
+    <h2>⚖️ 사건 접수: 쿠폰 A가 정말 나을까?</h2>
+    <table class="ct">
+      <tr><th></th><th>10명씩</th><th>100명씩</th></tr>
+      <tr><th class="rh">쿠폰 A 구매율</th><td>60%<small>6 / 10</small></td><td>60%<small>60 / 100</small></td></tr>
+      <tr><th class="rh">쿠폰 B 구매율</th><td>40%<small>4 / 10</small></td><td>40%<small>40 / 100</small></td></tr>
+      <tr><th class="rh">p 값</th><td style="color:#ff9b5c">0.65</td><td style="color:#6fdc9a">0.007</td></tr>
+    </table>
+    <div class="say q">똑같이 <b>20%p</b> 차이인데, 10명씩이면 "우연이라 해도 전혀 이상하지 않다", 100명씩이면 "우연으로 보기 어렵다"입니다. 비밀은 <b>③ 카이제곱</b>에서 풀립니다. 먼저 숫자가 아닌 데이터를 세는 법부터!</div>
+  </div>
+
+  <div class="card">
+    <h2>🗃️ 이 데이터는 어떤 종류?</h2>
+    <p class="note" style="margin-top:0">노란 테두리 항목을 알맞은 상자에 넣어 보세요.</p>
+    <div class="sort" id="soItems"></div>
+    <div class="bins">
+      <button data-b="nom">명목형<br><small style="font-weight:400">순서 없음</small></button>
+      <button data-b="ord">순서형<br><small style="font-weight:400">순서 있음</small></button>
+      <button data-b="num">수치형<br><small style="font-weight:400">크기·평균 의미</small></button>
+      <div id="bnom"></div><div id="bord"></div><div id="bnum"></div>
+    </div>
+    <div id="soMsg"></div>
+    <div class="row" style="margin-top:8px"><button class="btn sec sm" id="soReset">↺ 다시</button></div>
+  </div>
+
+  <div class="card">
+    <h2>📮 우편번호의 평균?</h2>
+    <div class="out"><span class="p">&gt;&gt;&gt; zips = [10881, 48058, 61452, 41940]   # 우편번호 네 개</span>
+<span class="p">&gt;&gt;&gt; sum(zips) / len(zips)</span>
+<span class="w">40582.75</span>   <span class="p">← 계산은 되지만 아무 뜻이 없음</span></div>
+    <div class="say">숫자로 적혀 있어도 <b>범주</b>일 수 있습니다. 범주형은 평균 대신 <b>빈도·비율·최빈값</b>으로 요약합니다.</div>
+  </div>
+
+  <div class="card">
+    <h2>🔍 세어 보면 상처가 보인다: value_counts()</h2>
+    <div class="code" id="vcRaw" style="white-space:pre-wrap"></div>
+    <div class="row" style="margin-top:8px"><button class="pill on" data-vc="raw">그대로 세기</button><button class="pill" data-vc="clean">정제 후 세기</button></div>
+    <div class="code" id="vcCode"></div>
+    <div class="vc" id="vcBars"></div>
+    <div id="vcMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🥧 막대 vs 원: 가장 큰 조각은?</h2>
+    <p class="note" style="margin-top:0">결제 수단 6종의 비율입니다. <b>원그래프만 보고</b> 가장 큰 조각을 골라 보세요.</p>
+    <canvas id="pieCv"></canvas>
+    <div class="row" id="pieOpts" style="margin-top:8px"></div>
+    <div id="pieMsg"></div>
+  </div>
+</section>
+
+<!-- ② -->
+<section id="tab-t2" hidden>
+  <div class="card">
+    <h2>📋 교차표: 가입 채널 × 재구매</h2>
+    <p class="note" style="margin-top:0">고객 200명. <b>pd.crosstab(df.채널, df.재구매, margins=True)</b></p>
+    <div class="row"><button class="pill on" data-pc="n">개수</button><button class="pill" data-pc="all">전체 %</button><button class="pill" data-pc="row">행 %</button><button class="pill" data-pc="col">열 %</button></div>
+    <table class="ct" id="ctT"></table>
+    <canvas id="ctCv"></canvas>
+    <div id="ctMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>❓ 퀴즈 ①</h2>
+    <div class="say q">남녀 각 100명, 모두 200명. 만족 120명, 불만족 80명. 성별과 만족이 <b>전혀 관계없다면</b>, "남자 & 만족" 칸에는 몇 명이 있어야 할까요?</div>
+    <div class="opts" id="qz1">
+      <button data-a="50">50명</button>
+      <button data-a="60">60명</button>
+      <button data-a="120">120명</button>
+    </div>
+    <div id="qz1Msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🧮 기대 빈도: 관계가 없다면?</h2>
+    <p class="note" style="margin-top:0">칸을 눌러 보세요. <b>행 합계 × 열 합계 ÷ 전체</b>로 계산합니다.</p>
+    <table class="ct" id="exT"></table>
+    <div class="out" id="exOut"></div>
+    <canvas id="exCv"></canvas>
+    <div class="say">관측(실제)과 기대(관계가 없을 때)가 <b>얼마나 다른가</b> — 이것이 카이제곱 검정의 출발점입니다.</div>
+  </div>
+</section>
+
+<!-- ③ -->
+<section id="tab-t3" hidden>
+  <div class="card">
+    <h2>➕ 차이를 그냥 더하면?</h2>
+    <table class="ct" id="cqT"></table>
+    <div class="row" style="margin-top:8px"><button class="pill on" data-cq="raw">O − E 그냥 더하기</button><button class="pill" data-cq="chi">(O − E)² / E 더하기</button></div>
+    <div class="out" id="cqOut"></div>
+    <div id="cqMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎚️ 자유도 1: 한 칸만 정하면 끝</h2>
+    <p class="note" style="margin-top:0">합계(90·110 / 98·102)는 그대로 두고 <b>"앱 & 재구매"</b> 한 칸만 움직여 보세요. 나머지 세 칸은 저절로 정해집니다.</p>
+    <input type="range" id="dfA" min="20" max="80" value="54" aria-label="앱 재구매 칸">
+    <table class="ct" id="dfT"></table>
+    <canvas id="dfCv"></canvas>
+    <div class="stats"><div>χ² 통계량<b id="dfX">-</b></div><div>p 값<b id="dfP">-</b></div><div>판정 (5%)<b id="dfJ">-</b></div></div>
+    <label class="sw"><input type="checkbox" id="dfY"> 예이츠 연속성 보정 (scipy 기본값)</label>
+    <div class="row" style="margin-top:8px"><button class="btn sec sm" id="dfObs">실제 관측 54로</button><button class="btn sec sm" id="dfInd">독립에 가깝게 44</button></div>
+    <div id="dfMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>👥 첫 장면의 비밀: 사람 수</h2>
+    <p class="note" style="margin-top:0">구매율은 <b>A 60% · B 40%</b>로 고정. 그룹당 사람 수만 바꿔 보세요.</p>
+    <div class="row"><span class="lbl">그룹당</span><b id="nV" style="min-width:60px">10명</b></div>
+    <input type="range" id="nS" min="0" max="7" value="0" step="1" aria-label="그룹당 사람 수">
+    <div class="row" style="justify-content:space-between;font-size:.72rem;color:#a3b0c2"><span>10</span><span>20</span><span>30</span><span>50</span><span>100</span><span>200</span><span>500</span><span>1000</span></div>
+    <canvas id="nCv"></canvas>
+    <div class="out" id="nOut"></div>
+    <div id="nMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎲 효과 없는 쿠폰으로 1,000번 실험</h2>
+    <p class="note" style="margin-top:0">두 쿠폰 모두 <b>진짜 구매율 50%</b>(효과 없음)라고 하고, 실험을 1,000번 흉내 냅니다. 우연만으로 <b>20%p 이상</b> 차이가 몇 번 나올까요?</p>
+    <div class="row"><button class="pill on" data-sm="10">10명씩</button><button class="pill" data-sm="100">100명씩</button></div>
+    <canvas id="smCv"></canvas>
+    <div class="row" style="margin-top:8px"><button class="btn" id="smRun">▶ 1,000번 실험</button></div>
+    <div id="smMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🔬 작은 표본이면: 코크란의 규칙과 피셔</h2>
+    <p class="note" style="margin-top:0">기대 빈도가 <b>5 미만인 칸이 20% 이하</b>, <b>1 미만인 칸은 없어야</b> 카이제곱 근사를 믿을 수 있습니다.</p>
+    <div class="row"><span class="lbl">그룹당</span><button class="pill" data-fi="5">5명</button><button class="pill on" data-fi="10">10명</button><button class="pill" data-fi="20">20명</button><button class="pill" data-fi="30">30명</button></div>
+    <table class="ct" id="fiT"></table>
+    <div class="out" id="fiOut"></div>
+    <div id="fiMsg"></div>
+  </div>
+</section>
+
+<!-- ④ -->
+<section id="tab-t4" hidden>
+  <div class="card">
+    <h2>🔢 서울 = 1, 부산 = 2, 대구 = 3 ?</h2>
+    <div class="out"><span class="p">지역 → 숫자로 바꾸면 모델은 이렇게 읽을 수 있습니다</span>
+<span class="w">서울(1) + 부산(2) = 대구(3)</span>
+<span class="w">대구(3) = 서울(1) × 3</span>
+<span class="w">평균 지역 = (1+2+3)/3 = 부산(2)</span></div>
+    <div class="say">순서도 크기도 없는 지역에 <b>크기가 생겨 버립니다</b>. 그래서 명목형은 원 핫 인코딩!</div>
+  </div>
+
+  <div class="card">
+    <h2>🧱 원 핫 인코딩 공장: pd.get_dummies</h2>
+    <div class="row"><span class="lbl">인코딩할 열</span><button class="pill on" data-oc="reg">지역 (4종)</button><button class="pill on" data-oc="grd">등급 (3종)</button></div>
+    <label class="sw"><input type="checkbox" id="ohDrop"> drop_first=True (각 열의 첫 범주 지우기)</label>
+    <div class="code" id="ohCode"></div>
+    <div class="ohw"><table class="oh" id="ohT"></table></div>
+    <div class="stats"><div>원래 열<b id="ohA">-</b></div><div>새로 생긴 열<b id="ohB">-</b></div><div>행마다 1의 개수<b id="ohC">-</b></div></div>
+    <div id="ohMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>❓ 퀴즈 ②</h2>
+    <div class="say q">지역 열에 서울·부산·대구·광주 <b>4종류</b>, 등급 열에 VIP·골드·일반 <b>3종류</b>가 있습니다. 두 열을 모두 원 핫 인코딩하면 열이 몇 개 생길까요?</div>
+    <div class="opts" id="qz2">
+      <button data-a="2">2개</button>
+      <button data-a="7">7개</button>
+      <button data-a="12">12개</button>
+    </div>
+    <div id="qz2Msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>📶 순서형은 순서를 살려서</h2>
+    <div class="out"><span class="p">만족도 → 순서 인코딩</span>
+불만족 → <span class="o">1</span>   보통 → <span class="o">2</span>   만족 → <span class="o">3</span>
+<span class="p">순서가 진짜로 있으니 1 &lt; 2 &lt; 3이 뜻을 가집니다.</span></div>
+    <div class="say">명목형은 <b>원 핫</b>, 순서형은 <b>순서 번호</b>도 방법 — 데이터의 종류에 맞게 고릅니다.</div>
+  </div>
+
+  <div class="card">
+    <h2>🐍 파이썬으로 한 번에</h2>
+    <div class="code"><span class="k">import</span> pandas <span class="k">as</span> pd, seaborn <span class="k">as</span> sns
+<span class="k">from</span> scipy.stats <span class="k">import</span> chi2_contingency
+
+df[<span class="s">"지역"</span>].value_counts()                  <span class="c"># ① 세기</span>
+tab = pd.crosstab(df[<span class="s">"채널"</span>], df[<span class="s">"재구매"</span>])     <span class="c"># ② 교차표</span>
+pd.crosstab(df[<span class="s">"채널"</span>], df[<span class="s">"재구매"</span>], normalize=<span class="s">"index"</span>)  <span class="c"># 행 %</span>
+chi2, p, dof, expected = chi2_contingency(tab)  <span class="c"># ③ 검정</span>
+sns.countplot(data=df, x=<span class="s">"채널"</span>, hue=<span class="s">"재구매"</span>)   <span class="c"># ④ 그림</span>
+pd.get_dummies(df, columns=[<span class="s">"지역"</span>, <span class="s">"등급"</span>])  <span class="c"># 모델 입력</span></div>
+    <div class="out"><span class="p">채널 표의 실제 결과 (scipy 기본: 예이츠 보정)</span>
+chi2 = <span class="o">7.143</span>, p = <span class="o">0.0075</span>, dof = <span class="o">1</span>
+expected = [[<span class="w">44.1</span>, 45.9], [53.9, 56.1]]   <span class="p">← 모든 칸 5 이상, 코크란 OK</span></div>
+    <div class="say">세고, 나누고, 검정하고, 그려 본다 — 범주형 탐색의 기본 순서입니다.</div>
+  </div>
+
+  <div class="card">
+    <h2>📌 세 줄 정리</h2>
+    <div class="sum3"><ol>
+      <li>범주형은 평균 대신 <b>빈도와 비율</b>로 요약하고, 빈도표로 <b>입력 오류</b>도 찾는다.</li>
+      <li>교차표는 <b>질문에 맞는 합계</b>로 나누고, 카이제곱은 <b>관측과 기대 빈도의 차이</b>로 독립인지 판정한다.</li>
+      <li>카이제곱은 <b>표본 크기에 비례</b>해 커지니 p 값과 차이의 크기를 함께 보고, 모델에는 <b>원 핫</b>으로 넣는다.</li>
+    </ol></div>
+  </div>
+
+  <div class="card">
+    <h2>🤔 생각해 볼 질문</h2>
+    <p class="note" style="margin-top:0">뉴스에서 "어떤 집단이 다른 집단보다 몇 % 더 …한다"는 조사를 보면, <b>각 집단이 몇 명이었는지</b> 확인해 본 적이 있나요? 최근 본 비율 기사를 적고 사람 수를 찾아보세요. (이 기기에만 저장)</p>
+    <div class="row" style="margin-top:8px"><input type="text" id="myIn" maxlength="60" placeholder="예: ○○ 이용자 30% 더 만족 — 몇 명?"><button class="btn sm" id="myAdd">추가</button></div>
+    <div class="mine" id="mine"></div>
+  </div>
+</section>
+
+<footer>© 2026 정필 수심명 · <a href="https://blog.naver.com/omyman" target="_blank" rel="noopener">blog.naver.com/omyman</a><br>빅데이터 07 부록 · 인터넷 없이 동작</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),1800);}
+const vib=n=>{try{navigator.vibrate&&navigator.vibrate(n);}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function prep(cv,ratio){const dpr=Math.min(2,window.devicePixelRatio||1),w=cv.clientWidth||320,h=Math.round(w*ratio);
+  cv.width=w*dpr;cv.height=h*dpr;cv.style.height=h+'px';const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return{c,w,h};}
+function T(c,s,x,y,col,size,al,bl,wt){c.fillStyle=col;c.font=`${wt||''} ${size||12}px -apple-system,"Malgun Gothic",sans-serif`;c.textAlign=al||'center';c.textBaseline=bl||'middle';c.fillText(s,x,y);}
+function single(sel,attr,fn){$$(sel).forEach(b=>b.onclick=()=>{$$(sel).forEach(x=>x.classList.toggle('on',x===b));fn(b.dataset[attr]);});}
+function quiz(id,ans,fn){$$(`#${id} button`).forEach(b=>b.onclick=()=>{const ok=b.dataset.a===ans;$$(`#${id} button`).forEach(x=>x.className=x.dataset.a===ans?'right':x===b?'wrong':'');vib(ok?[30,40,60]:80);$(`#${id}Msg`).innerHTML=fn(ok);});}
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* ===== 통계 함수 ===== */
+function erfc(x){const z=Math.abs(x),t=1/(1+.5*z);const r=t*Math.exp(-z*z-1.26551223+t*(1.00002368+t*(.37409196+t*(.09678418+t*(-.18628806+t*(.27886807+t*(-1.13520398+t*(1.48851587+t*(-.82215223+t*.17087277)))))))));return x>=0?r:2-r;}
+const pChi1=x=>x<=0?1:erfc(Math.sqrt(x/2));
+function chi2x2(t,yates){const r=[t[0][0]+t[0][1],t[1][0]+t[1][1]],c=[t[0][0]+t[1][0],t[0][1]+t[1][1]],n=r[0]+r[1];let x=0;const E=[[0,0],[0,0]];
+  for(let i=0;i<2;i++)for(let j=0;j<2;j++){const e=r[i]*c[j]/n;E[i][j]=e;let d=Math.abs(t[i][j]-e);if(yates)d=Math.max(0,d-.5);x+=d*d/e;}return{x,p:pChi1(x),E,r,c,n};}
+const lf=(()=>{const a=[0];for(let i=1;i<=4000;i++)a[i]=a[i-1]+Math.log(i);return a;})();
+function fisher(t){const a=t[0][0],b=t[0][1],c=t[1][0],d=t[1][1],r1=a+b,r2=c+d,c1=a+c,n=r1+r2;
+  const lp=k=>lf[r1]+lf[r2]+lf[c1]+lf[n-c1]-lf[n]-lf[k]-lf[r1-k]-lf[c1-k]-lf[r2-c1+k];
+  const p0=lp(a);let s=0;for(let k=Math.max(0,c1-r2);k<=Math.min(r1,c1);k++){const q=lp(k);if(q<=p0+1e-7)s+=Math.exp(q);}return Math.min(1,s);}
+const f3=v=>v<0.001?v.toExponential(1):v<0.01?v.toFixed(4):v.toFixed(3);
+const pdf1=x=>Math.exp(-x/2)/Math.sqrt(2*Math.PI*x);
+/* χ²(1) 분포 그림 */
+function chiPlot(cv,x,opts){opts=opts||{};const{c,w,h}=prep(cv,.48);const L=34,R=w-12,Tp=14,B=h-26,X=opts.xmax||12,Y=.8;
+  const sx=v=>L+v/X*(R-L),sy=v=>B-Math.min(v,Y)/Y*(B-Tp);
+  c.strokeStyle='#33425a';c.lineWidth=1;c.beginPath();c.moveTo(L,B);c.lineTo(R,B);c.moveTo(L,Tp);c.lineTo(L,B);c.stroke();
+  for(let v=0;v<=X;v+=X>20?10:2){T(c,String(v),sx(v),B+12,'#a3b0c2',10);}
+  /* p 영역 */
+  const xs=Math.min(x,X);c.beginPath();c.moveTo(sx(Math.max(x,.02)),B);for(let v=Math.max(x,.02);v<=X;v+=X/300)c.lineTo(sx(v),sy(pdf1(v)));c.lineTo(sx(X),B);c.closePath();c.fillStyle=x>=3.841?'#6fdc9a55':'#ff9b5c55';c.fill();
+  /* 기각역 경계 */
+  c.strokeStyle='#ff7d7d';c.setLineDash([4,3]);c.beginPath();c.moveTo(sx(3.841),Tp);c.lineTo(sx(3.841),B);c.stroke();c.setLineDash([]);T(c,'경계 3.84',sx(3.841)+4,Tp+6,'#ff7d7d',10,'left');
+  c.strokeStyle='#7cc4ff';c.lineWidth=2;c.beginPath();for(let v=.02;v<=X;v+=X/300){const px=sx(v),py=sy(pdf1(v));v<=.021?c.moveTo(px,py):c.lineTo(px,py);}c.stroke();
+  if(x<=X){c.strokeStyle='#ffd166';c.lineWidth=3;c.beginPath();c.moveTo(sx(xs),Tp+14);c.lineTo(sx(xs),B);c.stroke();T(c,'χ² = '+x.toFixed(2),Math.min(sx(xs),R-40),Tp+22,'#ffd166',11,sx(xs)>R-60?'right':'center','middle','700');}
+  else{T(c,'χ² = '+x.toFixed(1)+' →',R,Tp+22,'#ffd166',11,'right','middle','700');}
+  T(c,'자유도 1 카이제곱 분포 · 칠한 넓이 = p 값',R-2,B-10,'#a3b0c2',10,'right');}
+
+/* ===== ① 분류 ===== */
+const SO=[['혈액형','nom'],['만족도(불만족·보통·만족)','ord'],['키(cm)','num'],['우편번호','nom'],['결제 수단','nom'],['학점(A·B·C)','ord'],['월 구매액','num'],['지역 코드 1·2·3','nom'],['티셔츠 사이즈(S·M·L)','ord'],['방문 횟수','num']];
+let soI=0,soOk=0;const SN={nom:'명목형',ord:'순서형',num:'수치형'};
+function soDraw(){$('#soItems').innerHTML=SO.map((s,i)=>`<span class="${i<soI?'done':i===soI?'cur':''}">${s[0]}</span>`).join('');}
+function soReset(){soI=0;soOk=0;['nom','ord','num'].forEach(k=>$('#b'+k).innerHTML='');$('#soMsg').innerHTML='';soDraw();}
+$$('.bins button').forEach(b=>b.onclick=()=>{if(soI>=SO.length)return;const [nm,ans]=SO[soI];const ok=b.dataset.b===ans;vib(ok?20:80);if(ok)soOk++;
+  $('#b'+ans).innerHTML+=(($('#b'+ans).innerHTML?' · ':''))+`<span style="color:${ok?'#6fdc9a':'#ff7d7d'}">${nm.replace(/\(.*\)/,'')}</span>`;
+  let tip='';if(nm==='우편번호'||nm.startsWith('지역 코드'))tip=' 숫자로 적혀 있어도 <b>범주</b>입니다 — 평균에 뜻이 없죠.';else if(ans==='ord')tip=' 순서는 있지만 간격이 같다고 보장할 수 없습니다.';
+  $('#soMsg').innerHTML=`<div class="res ${ok?'g':'r'}">${ok?'정답!':'아쉽습니다.'} <b>${nm}</b> → ${SN[ans]}.${tip}</div>`;soI++;soDraw();
+  if(soI===SO.length)$('#soMsg').innerHTML+=`<div class="res y">${SO.length}개 중 <b>${soOk}</b>개 맞힘!</div>`;});
+$('#soReset').onclick=soReset;
+
+/* ===== ① value_counts ===== */
+const RAW=['서울','부산','서울','서울시','대구',' 서울','부산','서울','부산 ','대구','서울','광주','서울시','부산','서울','대구','서울 ','부산','서울','광주'];
+$('#vcRaw').innerHTML='<span class="c"># df["지역"] — 20명</span>\n'+RAW.map(s=>`<span class="s">'${esc(s)}'</span>`).join(', ');
+function vcDraw(m){const data=m==='clean'?RAW.map(s=>s.trim().replace(/시$/,'')):RAW;const cnt={};data.forEach(s=>cnt[s]=(cnt[s]||0)+1);const e=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);const mx=e[0][1];
+  $('#vcCode').innerHTML=m==='clean'?`df[<span class="s">"지역"</span>] = (df[<span class="s">"지역"</span>].str.strip()\n                .str.replace(<span class="s">"서울시"</span>, <span class="s">"서울"</span>))\ndf[<span class="s">"지역"</span>].value_counts()`:`df[<span class="s">"지역"</span>].value_counts()`;
+  const clean=['서울','부산','대구','광주'];
+  $('#vcBars').innerHTML=e.map(([k,v])=>`<div class="d ${clean.includes(k)?'':'bad'}"><span>'${esc(k)}'</span><div class="bar" style="width:${v/mx*100}%"></div><b>${v}</b></div>`).join('');
+  $('#vcMsg').innerHTML=m==='clean'?`<div class="res g">공백을 지우고 '서울시'를 '서울'로 합치니 4개 범주로 정리됐습니다. 최빈값은 <b>서울(${cnt['서울']}명, ${cnt['서울']/20*100}%)</b>. 빈도표는 <b>정제의 첫걸음</b>입니다.</div>`
+    :`<div class="res r">같은 서울이 <b>'서울', '서울시', ' 서울', '서울 '</b> 네 줄로 나뉘었습니다(빨간 막대). 부산도 공백 때문에 둘로 갈렸습니다. 입력 오류의 흔적입니다.</div>`;}
+single('[data-vc]','vc',vcDraw);
+
+/* ===== ① 파이 vs 막대 ===== */
+const PAY=[['카드',17.5],['간편결제',18.5],['계좌이체',16.0],['현금',15.5],['포인트',16.5],['상품권',16.0]];const PCOL=['#7cc4ff','#ff9b5c','#6fdc9a','#b79cff','#ffd166','#ff7d7d'];
+let pieMode='pie';
+function pieDraw(){const{c,w,h}=prep($('#pieCv'),.62);
+  if(pieMode==='pie'){const cx=w*.32,cy=h/2,r=Math.min(h*.42,w*.28);let a=-Math.PI/2;PAY.forEach(([k,v],i)=>{const da=v/100*2*Math.PI;c.beginPath();c.moveTo(cx,cy);c.arc(cx,cy,r,a,a+da);c.closePath();c.fillStyle=PCOL[i];c.fill();c.strokeStyle='#10141b';c.lineWidth=2;c.stroke();a+=da;});
+    PAY.forEach(([k],i)=>{const y=h/2-(PAY.length-1)*12+i*24;c.fillStyle=PCOL[i];c.fillRect(w*.64,y-6,12,12);T(c,k,w*.64+18,y,'#eff3f8',12,'left');});}
+  else{const L=70,R=w-40,top=14,bh=(h-28)/PAY.length;PAY.forEach(([k,v],i)=>{const y=top+i*bh;T(c,k,L-8,y+bh/2,'#eff3f8',12,'right');c.fillStyle=PCOL[i];c.fillRect(L,y+4,(R-L)*v/20,bh-8);T(c,v+'%',L+(R-L)*v/20+4,y+bh/2,'#eff3f8',11,'left');});}}
+$('#pieOpts').innerHTML=PAY.map(p=>`<button class="pill" data-pp="${p[0]}">${p[0]}</button>`).join('');
+$$('#pieOpts button').forEach(b=>b.onclick=()=>{const ok=b.dataset.pp==='간편결제';$$('#pieOpts button').forEach(x=>x.classList.toggle('on',x===b));pieMode='bar';pieDraw();vib(ok?[30,40,60]:80);
+  $('#pieMsg').innerHTML=`<div class="res ${ok?'g':'y'}">${ok?'맞혔습니다! 하지만 확신이 있었나요?':`정답은 <b>간편결제(18.5%)</b>입니다.`} 막대로 바꾸니 한눈에 보입니다. 범주가 <b>5개를 넘거나 비율이 비슷하면</b> 원보다 막대가 정확하게 읽힙니다. 원그래프는 전체에서 차지하는 <b>몫</b>을 보여 줄 때 씁니다.</div><div class="row" style="margin-top:8px"><button class="btn sec sm" id="pieBack">원그래프로 다시 보기</button></div>`;
+  $('#pieBack').onclick=()=>{pieMode=pieMode==='pie'?'bar':'pie';$('#pieBack').textContent=pieMode==='pie'?'막대그래프로 보기':'원그래프로 다시 보기';pieDraw();};});
+
+/* ===== ② 교차표 ===== */
+const CH=[[54,36],[44,66]],CR=['앱','웹'],CC=['재구매 O','재구매 X'];let pcM='n';
+function ctDraw(){const r=[90,110],c=[98,102],n=200;const f=(v,i,j)=>pcM==='n'?v:pcM==='all'?(v/n*100).toFixed(1)+'%':pcM==='row'?(v/r[i]*100).toFixed(1)+'%':(v/c[j]*100).toFixed(1)+'%';
+  const sub=(v,i,j)=>pcM==='n'?'':`<small>${v} / ${pcM==='all'?n:pcM==='row'?r[i]:c[j]}</small>`;
+  const marg=(v,kind)=>{if(pcM==='n')return v;if(pcM==='all')return (v/n*100).toFixed(1)+'%';if(pcM==='row')return kind==='r'?'100%':kind==='all'?'100%':(v/n*100).toFixed(1)+'%';return kind==='c'?'100%':kind==='all'?'100%':(v/n*100).toFixed(1)+'%';};
+  const hl=(i,j)=>(pcM==='row'&&j===0)||(pcM==='col'&&i===0&&j===0)?'hl':'';
+  $('#ctT').innerHTML=`<tr><th></th><th>${CC[0]}</th><th>${CC[1]}</th><th>합계</th></tr>`+CH.map((row,i)=>`<tr><th class="rh">${CR[i]}</th>${row.map((v,j)=>`<td class="${hl(i,j)}">${f(v,i,j)}${sub(v,i,j)}</td>`).join('')}<td class="m ${pcM==='row'?'div':''}">${marg(r[i],'r')}</td></tr>`).join('')
+    +`<tr><th class="rh">합계</th>${c.map((v,j)=>`<td class="m ${pcM==='col'?'div':''}">${marg(v,'c')}</td>`).join('')}<td class="m ${pcM==='all'?'div':''}">${marg(n,'all')}</td></tr>`;
+  const msg={n:`<div class="res y">칸의 숫자만 보면 앱 54명, 웹 44명 — 그런데 앱 고객은 90명, 웹 고객은 110명으로 <b>그룹 크기가 다릅니다</b>. 비율로 바꿔 봐야 합니다.</div>`,
+    all:`<div class="res y">전체 200명으로 나눈 <b>전체 백분율</b>. "앱으로 가입해 재구매한 고객이 전체의 27%" — 네 칸을 모두 더하면 100%.</div>`,
+    row:`<div class="res g"><b>행 백분율</b> = 채널별 재구매율. 앱 고객 중 <b>60%</b>, 웹 고객 중 <b>40%</b>가 재구매. "채널이 재구매에 영향을 주나?"에 답하는 비율 — 원인으로 보는 변수(채널)의 합계로 나눕니다.</div>`,
+    col:`<div class="res g"><b>열 백분율</b> = 재구매자의 구성. 재구매한 98명 중 <b>55.1%</b>가 앱 고객. "재구매자는 어디서 왔나?"에 답하는 비율입니다.</div>`};
+  $('#ctMsg').innerHTML=msg[pcM];ctPlot();}
+function ctPlot(){const{c,w,h}=prep($('#ctCv'),.4);const L=40,R=w-14,top=24,B=h-24,bw=(R-L)/2;
+  const rows=pcM==='col'?[[54/98,44/98],[36/102,66/102]]:[[54/90,36/90],[44/110,66/110]];const lab=pcM==='col'?['재구매 O','재구매 X']:['앱','웹'];const seg=pcM==='col'?['앱','웹']:['재구매 O','재구매 X'];
+  rows.forEach((rw,i)=>{const x=L+i*bw+bw*.15,ww=bw*.7;let y=B;rw.forEach((v,j)=>{const hh=(B-top)*v;c.fillStyle=j?'#33425a':(pcM==='col'?'#ff9b5c':'#6fdc9a');c.fillRect(x,y-hh,ww,hh);if(hh>14)T(c,`${seg[j]} ${(v*100).toFixed(0)}%`,x+ww/2,y-hh/2,'#fff',11,'center','middle','700');y-=hh;});T(c,lab[i],x+ww/2,B+12,'#a3b0c2',11);});
+  T(c,pcM==='col'?'열 100% 막대 (재구매자 구성)':'행 100% 막대 (채널별 재구매율)',10,11,'#a3b0c2',10,'left');}
+single('[data-pc]','pc',v=>{pcM=v;ctDraw();});
+quiz('qz1','60',ok=>`<div class="res ${ok?'g':'r'}">${ok?'정답!':'정답은 <b>60명</b>입니다.'} 관계가 없다면 남자도 전체와 같은 비율 — <b>120/200 = 60%</b>가 만족해야 합니다. 행 합계 100 × 열 합계 120 ÷ 전체 200 = <b>60</b>. 이것이 <b>기대 빈도</b>입니다. (50은 "남자가 절반"만 본 답)</div>`);
+
+/* ===== ② 기대 빈도 ===== */
+let exSel=[0,0];
+function exDraw(){const R=chi2x2(CH);$('#exT').innerHTML=`<tr><th></th><th>재구매 O</th><th>재구매 X</th><th>합계</th></tr>`+CH.map((row,i)=>`<tr><th class="rh">${CR[i]}</th>${row.map((v,j)=>`<td data-i="${i}" data-j="${j}" class="${exSel[0]===i&&exSel[1]===j?'hl':''}" style="cursor:pointer">${R.E[i][j].toFixed(1)}<small>관측 ${v}</small></td>`).join('')}<td class="m">${R.r[i]}</td></tr>`).join('')+`<tr><th class="rh">합계</th><td class="m">${R.c[0]}</td><td class="m">${R.c[1]}</td><td class="m">200</td></tr>`;
+  $$('#exT td[data-i]').forEach(td=>td.onclick=()=>{exSel=[+td.dataset.i,+td.dataset.j];exDraw();vib(15);});
+  const [i,j]=exSel;$('#exOut').innerHTML=`<span class="p">${CR[i]} & ${CC[j]} 칸의 기대 빈도</span>\n= 행 합계 ${R.r[i]} × 열 합계 ${R.c[j]} ÷ 전체 200 = <span class="w">${R.E[i][j].toFixed(1)}</span>\n<span class="p">실제 관측</span> <span class="o">${CH[i][j]}</span>  <span class="p">→ 차이</span> <span class="${CH[i][j]-R.E[i][j]>0?'o':'e'}">${(CH[i][j]-R.E[i][j]>0?'+':'')+(CH[i][j]-R.E[i][j]).toFixed(1)}</span>`;
+  const{c,w,h}=prep($('#exCv'),.4);const L=10,Rr=w-10,gw=(Rr-L)/4,mx=70,B=h-30,top=16;
+  [[0,0],[0,1],[1,0],[1,1]].forEach(([a,b],k)=>{const x=L+k*gw,o=CH[a][b],e=R.E[a][b],bw=gw*.3;const sel=a===i&&b===j;
+    c.fillStyle='#55667f';const he=(B-top)*e/mx;c.fillRect(x+gw*.15,B-he,bw,he);c.fillStyle=sel?'#ffd166':'#7cc4ff';const ho=(B-top)*o/mx;c.fillRect(x+gw*.15+bw+3,B-ho,bw,ho);
+    T(c,e.toFixed(1),x+gw*.15+bw/2,B-he-7,'#a3b0c2',9);T(c,String(o),x+gw*.15+bw*1.5+3,B-ho-7,sel?'#ffd166':'#7cc4ff',10,'center','middle','700');
+    T(c,`${CR[a]}·${b?'X':'O'}`,x+gw/2,B+12,sel?'#ffd166':'#a3b0c2',11);});
+  T(c,'■ 기대  ■ 관측',w-12,10,'#a3b0c2',10,'right');}
+
+/* ===== ③ 차이 더하기 ===== */
+let cqM='raw';
+function cqDraw(){const R=chi2x2(CH);$('#cqT').innerHTML=`<tr><th></th><th>재구매 O</th><th>재구매 X</th></tr>`+CH.map((row,i)=>`<tr><th class="rh">${CR[i]}</th>${row.map((v,j)=>{const d=v-R.E[i][j];const val=cqM==='raw'?(d>0?'+':'')+d.toFixed(1):(d*d/R.E[i][j]).toFixed(3);return `<td>${val}<small>O ${v} · E ${R.E[i][j].toFixed(1)}</small></td>`;}).join('')}</tr>`).join('');
+  if(cqM==='raw'){$('#cqOut').innerHTML=`(+9.9) + (−9.9) + (−9.9) + (+9.9) = <span class="e">0</span>`;$('#cqMsg').innerHTML=`<div class="res r">플러스와 마이너스가 <b>지워져 0</b>이 됩니다. 관계가 아무리 강해도 2×2 표에서는 항상 0이에요.</div>`;}
+  else{const parts=[];CH.forEach((row,i)=>row.forEach((v,j)=>parts.push((v-R.E[i][j])**2/R.E[i][j])));
+    $('#cqOut').innerHTML=parts.map(p=>p.toFixed(3)).join(' + ')+`\n= <span class="o">χ² = ${R.x.toFixed(2)}</span>`;
+    $('#cqMsg').innerHTML=`<div class="res g">차이를 <b>제곱</b>해 부호를 없애고, <b>기대 빈도로 나눠</b> 크기를 맞춘 뒤 더합니다. 앱·재구매 칸은 기대 44.1, 실제 54 → 네 칸을 합하면 <b>7.92</b>. 이 값이 큰지는 자유도와 카이제곱 분포로 판단합니다(아래).</div>`;}}
+single('[data-cq]','cq',v=>{cqM=v;cqDraw();});
+
+/* ===== ③ 자유도 슬라이더 ===== */
+function dfDraw(){const a=+$('#dfA').value,t=[[a,90-a],[98-a,12+a]],y=$('#dfY').checked,R=chi2x2(t,y);
+  $('#dfT').innerHTML=`<tr><th></th><th>재구매 O</th><th>재구매 X</th><th>합계</th></tr><tr><th class="rh">앱</th><td class="hl">${a}<small>내가 정함</small></td><td>${90-a}<small>90 − ${a}</small></td><td class="m">90</td></tr><tr><th class="rh">웹</th><td>${98-a}<small>98 − ${a}</small></td><td>${12+a}<small>110 − ${98-a}</small></td><td class="m">110</td></tr><tr><th class="rh">합계</th><td class="m">98</td><td class="m">102</td><td class="m">200</td></tr>`;
+  chiPlot($('#dfCv'),R.x,{xmax:12});$('#dfX').textContent=R.x.toFixed(2);$('#dfP').textContent=f3(R.p);const sig=R.p<.05;$('#dfJ').textContent=sig?'관계 있음':'판단 보류';$('#dfJ').style.color=sig?'#6fdc9a':'#ff9b5c';
+  const rr=(a/90*100).toFixed(0),rw=((98-a)/110*100).toFixed(0);
+  $('#dfMsg').innerHTML=`<div class="res ${sig?'g':'y'}">2×2 표는 합계가 정해지면 <b>한 칸만</b> 마음대로 정할 수 있습니다 → 자유도 (2−1)×(2−1) = <b>1</b>. 재구매율 앱 ${rr}% · 웹 ${rw}%. ${a===54?`실제 관측 54: χ² ${R.x.toFixed(2)}가 경계 3.84를 훌쩍 넘고 p = ${f3(R.p)} &lt; 0.05 → 독립이라는 귀무가설 <b>기각</b>. 다만 "관계가 있다"이지 <b>원인</b>이라는 뜻은 아닙니다.`:sig?'경계 3.84를 넘어 p &lt; 0.05 — 독립이라 보기 어렵습니다.':'경계 3.84 안쪽 — 우연으로도 충분히 나올 수 있는 차이입니다.'}${y&&a===54?' (보정하면 7.92 → 7.14로 조금 작아집니다.)':''}</div>`;}
+$('#dfA').oninput=dfDraw;$('#dfY').onchange=dfDraw;$('#dfObs').onclick=()=>{$('#dfA').value=54;dfDraw();};$('#dfInd').onclick=()=>{$('#dfA').value=44;dfDraw();};
+
+/* ===== ③ 사람 수 ===== */
+const NS=[10,20,30,50,100,200,500,1000];
+function nDraw(){const n=NS[+$('#nS').value];$('#nV').textContent=n+'명';const t=[[.6*n,.4*n],[.4*n,.6*n]];const raw=chi2x2(t,false),yt=chi2x2(t,true);
+  chiPlot($('#nCv'),raw.x,{xmax:n>=100?(n>=200?Math.max(12,raw.x*1.15):12):12});
+  $('#nOut').innerHTML=`<span class="p">표 [[${t[0][0]}, ${t[0][1]}], [${t[1][0]}, ${t[1][1]}]]</span>\n보정 없이 χ² = <span class="w">${raw.x.toFixed(2)}</span>, p = ${f3(raw.p)}\n예이츠 보정 χ² = <span class="w">${yt.x.toFixed(2)}</span>, p = <span class="${yt.p<.05?'o':'e'}">${f3(yt.p)}</span>  <span class="p">← scipy 기본</span>${n<=10||n===100?`\n피셔 정확 검정 p = ${f3(fisher(t))}`:''}`;
+  $('#nMsg').innerHTML=`<div class="res ${raw.p<.05?'g':'y'}">보정 없는 χ²는 <b>0.08 × ${n} = ${raw.x.toFixed(1)}</b> — 사람 수에 정확히 <b>비례</b>합니다. 칸의 사람 수가 10배면 차이의 제곱은 100배, 나누는 기대 빈도는 10배라서 χ²는 10배.${n===10?' 10명씩: 0.8은 경계 3.84에 한참 못 미칩니다.':n===100?' 100명씩: 8은 경계를 훌쩍 넘습니다.':''}${n>=500?' <b>반대로</b> 사람이 아주 많으면 작은 차이도 유의하게 나오니, p 값과 함께 <b>차이의 크기(여기선 20%p)</b>를 꼭 같이 보세요.':''}</div>`;}
+$('#nS').oninput=nDraw;
+
+/* ===== ③ 시뮬레이션 ===== */
+let smN=10,smLast=[],smBusy=false;
+function smPlot(diffs,done){const{c,w,h}=prep($('#smCv'),.45);const L=14,R=w-14,top=22,B=h-26;const bins=41;const cnt=new Array(bins).fill(0);
+  (diffs||[]).forEach(d=>{const k=Math.round((d+1)*20);if(k>=0&&k<bins)cnt[k]++;});const mx=Math.max(10,...cnt);const bw=(R-L)/bins;
+  cnt.forEach((v,k)=>{const d=k/20-1;const hh=(B-top)*v/mx;c.fillStyle=Math.abs(d)>=.2-1e-9?'#ff9b5c':'#7cc4ff';c.fillRect(L+k*bw+1,B-hh,bw-2,hh);});
+  [-1,-.5,-.2,0,.2,.5,1].forEach(d=>T(c,(d>0?'+':'')+Math.round(d*100)+'%p',L+(d+1)*20*bw+bw/2,B+12,Math.abs(d)===.2?'#ff9b5c':'#a3b0c2',9));
+  T(c,'구매율 차이 (A − B) 분포 · 주황 = 20%p 이상',L,10,'#a3b0c2',10,'left');}
+single('[data-sm]','sm',v=>{if(smBusy)return;smN=+v;smLast=[];smPlot([]);$('#smMsg').innerHTML='';});
+$('#smRun').onclick=async()=>{if(smBusy)return;smBusy=true;const r=rng(Date.now()&0xffff),diffs=[];let big=0;
+  for(let k=0;k<1000;k++){let a=0,b=0;for(let i=0;i<smN;i++){if(r()<.5)a++;if(r()<.5)b++;}const d=(a-b)/smN;diffs.push(d);if(Math.abs(d)>=.2-1e-9)big++;
+    if(k%50===49){smPlot(diffs);$('#smMsg').innerHTML=`<div class="res y">${k+1}번 중 20%p 이상: <b>${big}</b>번</div>`;await new Promise(z=>setTimeout(z,30));}}
+  const pct=big/10;vib(30);smLast=diffs;
+  $('#smMsg').innerHTML=`<div class="res ${smN===10?'r':'g'}">${smN===10?`효과가 전혀 없는데도 1,000번 중 <b>${big}번(${pct.toFixed(1)}%)</b>이나 20%p 이상 차이가 났습니다. `:`효과 없는 쿠폰으로 20%p 이상 차이가 난 것은 1,000번 중 단 <b>${big}번(${pct.toFixed(1)}%)</b>. `}${smN===10?'10명씩이면 이만한 차이는 <b>흔한 우연</b>입니다.':'100명씩이면 20%p 차이는 우연으로는 <b>거의 나오지 않습니다</b>.'} <span style="color:#a3b0c2">(양쪽 방향을 모두 센 단순 흉내라 검정의 p 값과 숫자는 다르지만, 결론의 방향은 같습니다.)</span></div>`;smBusy=false;};
+
+/* ===== ③ 코크란·피셔 ===== */
+function fiDraw(n){const a=Math.round(.6*n),t=[[a,n-a],[n-a,a]];const R=chi2x2(t,true),fp=fisher(t);const cells=[].concat(...R.E);const lt5=cells.filter(e=>e<5).length,lt1=cells.filter(e=>e<1).length;const okC=lt5/4<=.2&&lt1===0;
+  $('#fiT').innerHTML=`<tr><th></th><th>구매</th><th>안 삼</th></tr>`+t.map((row,i)=>`<tr><th class="rh">쿠폰 ${'AB'[i]}</th>${row.map((v,j)=>`<td style="${R.E[i][j]<5?'background:#3a1d1d':''}">${v}<small>기대 ${R.E[i][j].toFixed(1)}</small></td>`).join('')}</tr>`).join('');
+  $('#fiOut').innerHTML=`<span class="p">구매율 A ${(a/n*100).toFixed(0)}% · B ${((n-a)/n*100).toFixed(0)}%   기대 빈도 5 미만 칸: ${lt5}/4</span>\n카이제곱(예이츠) p = <span class="w">${f3(R.p)}</span>\n피셔 정확 검정  p = <span class="o">${f3(fp)}</span>`;
+  $('#fiMsg').innerHTML=`<div class="res ${okC?'g':'r'}">${okC?`코크란의 규칙 <b>통과</b> — 카이제곱 근사를 써도 됩니다. 피셔와 결과도 비슷합니다.`:`기대 빈도 5 미만 칸이 ${lt5}개(${lt5/4*100}%)로 20%를 넘습니다 → 카이제곱 근사를 믿기 어렵습니다. <b>피셔의 정확 검정</b>은 근사 없이 가능한 모든 표의 확률을 직접 더합니다.`}</div>`;}
+single('[data-fi]','fi',v=>fiDraw(+v));
+
+/* ===== ④ 원 핫 ===== */
+const OH=[['서울','VIP'],['부산','일반'],['대구','골드'],['광주','일반'],['서울','골드'],['부산','VIP']];
+const OCAT={reg:['광주','대구','부산','서울'],grd:['VIP','골드','일반']};const ONAME={reg:'지역',grd:'등급'};
+let ohOn={reg:true,grd:true};
+function ohDraw(){const drop=$('#ohDrop').checked;const cols=['reg','grd'].filter(k=>ohOn[k]);
+  $('#ohCode').innerHTML=`pd.get_dummies(df, columns=[${cols.map(k=>`<span class="s">"${ONAME[k]}"</span>`).join(', ')}]${drop?', drop_first=<span class="k">True</span>':''}, dtype=<span class="f">int</span>)`;
+  let head='<tr><th>#</th>';['reg','grd'].forEach((k,ci)=>{if(ohOn[k])OCAT[k].forEach((v,i)=>head+=`<th class="${drop&&i===0?'dr':''}">${ONAME[k]}_${v}</th>`);else head+=`<th>${ONAME[k]}</th>`;});head+='</tr>';
+  const body=OH.map((r,ri)=>{let s=`<tr><td>${ri}</td>`;['reg','grd'].forEach((k,ci)=>{const val=r[ci];if(ohOn[k])OCAT[k].forEach((v,i)=>s+=`<td class="${v===val?'one':''} ${drop&&i===0?'dr':''}">${v===val?1:0}</td>`);else s+=`<td>${val}</td>`;});return s+'</tr>';}).join('');
+  $('#ohT').innerHTML=head+body;const nNew=cols.reduce((s,k)=>s+OCAT[k].length-(drop?1:0),0);
+  $('#ohA').textContent=cols.length;$('#ohB').textContent=nNew;$('#ohC').textContent=drop?'0 또는 1':cols.length;
+  $('#ohMsg').innerHTML=`<div class="res ${drop?'y':'g'}">${cols.length===2?(drop?`3 + 2 = <b>5</b>개. 각 열의 첫 범주(광주, VIP)를 지웠습니다. 나머지가 <b>모두 0</b>이면 그 범주라는 뜻이라 정보는 그대로 남습니다.`:`4 + 3 = <b>7</b>개. 원 핫은 열마다 <b>따로</b> 범주 수만큼 만듭니다 — 4 × 3 조합을 만드는 게 아닙니다.`):cols.length===1?`${ONAME[cols[0]]} 열 하나만: <b>${nNew}</b>개.`:'인코딩할 열을 골라 보세요.'}</div>`;}
+$$('[data-oc]').forEach(b=>b.onclick=()=>{const k=b.dataset.oc;ohOn[k]=!ohOn[k];b.classList.toggle('on',ohOn[k]);ohDraw();});
+$('#ohDrop').onchange=ohDraw;
+quiz('qz2','7',ok=>`<div class="res ${ok?'g':'r'}">${ok?'정답!':'정답은 <b>7개</b>입니다.'} 원 핫은 열마다 따로 범주 수만큼 만들어 <b>4 + 3 = 7</b>. 조합(4 × 3 = 12)을 만드는 것이 아닙니다. drop_first를 켜면 하나씩 줄어 <b>5개</b> — 위의 공장에서 확인해 보세요.</div>`);
+
+/* 나의 예 */
+const MK='couponcourt.mine';let mine=[];try{mine=JSON.parse(localStorage.getItem(MK)||'[]');if(!Array.isArray(mine))mine=[];}catch(e){mine=[];}
+const saveM=()=>{try{localStorage.setItem(MK,JSON.stringify(mine));}catch(e){}};
+function drawMine(){$('#mine').innerHTML=mine.length?mine.map((m,i)=>`<div><span>🎟️ ${esc(m)}</span><button data-d="${i}" aria-label="지우기">✕</button></div>`).join(''):'<p class="note">비율 옆의 사람 수를 묻는 습관이 데이터를 읽는 힘입니다.</p>';
+  $$('#mine button').forEach(b=>b.onclick=()=>{mine.splice(+b.dataset.d,1);saveM();drawMine();});}
+$('#myAdd').onclick=()=>{const v=$('#myIn').value.trim();if(!v)return;mine.unshift(v);mine=mine.slice(0,30);saveM();$('#myIn').value='';drawMine();toast('사람 수를 확인할 기사 추가!');};
+$('#myIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('#myAdd').click();});
+
+/* 탭 */
+function redraw(){if(!$('#tab-t1').hidden)pieDraw();if(!$('#tab-t2').hidden){ctPlot();exDraw();}if(!$('#tab-t3').hidden){dfDraw();nDraw();smPlot(smLast);}}
+function show(t){$$('.tabs button').forEach(x=>x.classList.toggle('on',x.dataset.tab===t));['t1','t2','t3','t4'].forEach(k=>$('#tab-'+k).hidden=k!==t);redraw();window.scrollTo(0,0);}
+$$('.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(redraw,120);});
+soReset();vcDraw('raw');pieDraw();ctDraw();exDraw();cqDraw();fiDraw(10);ohDraw();drawMine();
+})();
+</script>
+</body>
+</html>
